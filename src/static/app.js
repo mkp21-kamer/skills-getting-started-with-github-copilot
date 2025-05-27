@@ -47,6 +47,44 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Add delete functionality for participants
+  function addDeleteFunctionality(activityName, participantEmail, participantElement) {
+    const deleteIcon = document.createElement("span");
+    deleteIcon.textContent = "✖";
+    deleteIcon.className = "delete-icon";
+    deleteIcon.addEventListener("click", async () => {
+      try {
+        const response = await fetch(
+          `/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(participantEmail)}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (response.ok) {
+          participantElement.remove();
+        } else {
+          console.error("Failed to unregister participant:", await response.json());
+        }
+      } catch (error) {
+        console.error("Error unregistering participant:", error);
+      }
+    });
+    participantElement.appendChild(deleteIcon);
+  }
+
+  // Function to dynamically update the participant list
+  function updateParticipantList(activityName, participantEmail) {
+    const activityElement = document.querySelector(`[data-activity-name="${activityName}"]`);
+    if (activityElement) {
+      const participantsList = activityElement.querySelector(".participants ul");
+      const newParticipant = document.createElement("li");
+      newParticipant.textContent = participantEmail;
+      addDeleteFunctionality(activityName, participantEmail, newParticipant);
+      participantsList.appendChild(newParticipant);
+    }
+  }
+
   // Handle form submission
   signupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -68,6 +106,9 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+
+        // Dynamically update the participant list
+        updateParticipantList(activity, email);
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
